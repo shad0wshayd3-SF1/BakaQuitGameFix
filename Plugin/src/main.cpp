@@ -39,28 +39,56 @@ class Hooks
 public:
 	static void Install()
 	{
-		static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x01AE1480) };
-		stl::asm_replace(target.address(), 0x29, reinterpret_cast<std::uintptr_t>(hkQuitGame));
+		hkQuitGame::Install();
+		hkShutdown::Install();
 	}
 
 private:
-	static bool hkQuitGame()
+	class hkQuitGame
 	{
-		static REL::Relocation<void**> Console{ REL::Offset(0x058F6C50) };
-		static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::Offset(0x02883BE4) };
-		ConsolePrint(*Console.get(), "Bye.");
+	public:
+		static void Install()
+		{
+			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x01AE1480) };
+			stl::asm_replace(target.address(), 0x29, reinterpret_cast<std::uintptr_t>(QuitGame));
+		}
 
-		std::thread(
-			[]() {
-				std::this_thread::sleep_for(std::chrono::milliseconds(200));
-				static REL::Relocation<std::byte**> Main{ REL::Offset(0x059056A0) };
-				auto quitGame = reinterpret_cast<bool*>((*Main.get()) + 0x28);
-				*quitGame = true;
-			})
-			.detach();
+	private:
+		static bool QuitGame()
+		{
+			static REL::Relocation<void**> Console{ REL::Offset(0x058F6C50) };
+			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::Offset(0x02883BE4) };
+			ConsolePrint(*Console.get(), "Bye.");
 
-		return true;
-	}
+			std::thread(
+				[]() {
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					static REL::Relocation<std::byte**> Main{ REL::Offset(0x059056A0) };
+					auto quitGame = reinterpret_cast<bool*>((*Main.get()) + 0x28);
+					*quitGame = true;
+				})
+				.detach();
+
+			return true;
+		}
+	};
+
+	class hkShutdown
+	{
+	public:
+		static void Install()
+		{
+			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x023FE838), 0x77 };
+			auto& trampoline = SFSE::GetTrampoline();
+			trampoline.write_call<5>(target.address(), Shutdown);
+		}
+
+	private:
+		static void Shutdown()
+		{
+			RE::WinAPI::TerminateProcess(RE::WinAPI::GetCurrentProcess(), EXIT_SUCCESS);
+		}
+	};
 };
 
 DLLEXPORT constinit auto SFSEPlugin_Version = []() noexcept {
@@ -69,7 +97,7 @@ DLLEXPORT constinit auto SFSEPlugin_Version = []() noexcept {
 	data.PluginVersion(Plugin::Version);
 	data.PluginName(Plugin::NAME);
 	data.AuthorName(Plugin::AUTHOR);
-	data.UsesSigScanning(true);
+	data.UsesSigScanning(false);
 	//data.UsesAddressLibrary(true);
 	data.HasNoStructUse(true);
 	//data.IsLayoutDependent(true);
@@ -107,6 +135,8 @@ DLLEXPORT bool SFSEAPI SFSEPlugin_Load(const SFSE::LoadInterface* a_sfse)
 	DKUtil::Logger::Init(Plugin::NAME, std::to_string(Plugin::Version));
 
 	INFO("{} v{} loaded", Plugin::NAME, Plugin::Version);
+
+	SFSE::AllocTrampoline(1 << 6);
 
 	SFSE::GetMessagingInterface()->RegisterListener(MessageCallback);
 
