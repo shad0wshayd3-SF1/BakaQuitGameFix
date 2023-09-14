@@ -49,21 +49,21 @@ private:
 	public:
 		static void Install()
 		{
-			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x01AE1480) };
+			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x01AE1440) };
 			stl::asm_replace(target.address(), 0x29, reinterpret_cast<std::uintptr_t>(QuitGame));
 		}
 
 	private:
 		static bool QuitGame()
 		{
-			static REL::Relocation<void**> Console{ REL::Offset(0x058F6C50) };
-			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::Offset(0x02883BE4) };
+			static REL::Relocation<void**>                            Console{ REL::Offset(0x058F7A90) };
+			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::Offset(0x02883A14) };
 			ConsolePrint(*Console.get(), "Bye.");
 
 			std::thread(
 				[]() {
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					static REL::Relocation<std::byte**> Main{ REL::Offset(0x059056A0) };
+					static REL::Relocation<std::byte**> Main{ REL::Offset(0x05906450) };
 					auto quitGame = reinterpret_cast<bool*>((*Main.get()) + 0x28);
 					*quitGame = true;
 				})
@@ -78,7 +78,7 @@ private:
 	public:
 		static void Install()
 		{
-			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x023FE838), 0x77 };
+			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x023FE8A8), 0x77 };
 			auto& trampoline = SFSE::GetTrampoline();
 			trampoline.write_call<5>(target.address(), Shutdown);
 		}
