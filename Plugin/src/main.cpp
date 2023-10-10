@@ -49,21 +49,21 @@ private:
 	public:
 		static void Install()
 		{
-			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x01AE0DF0) };
+			static REL::Relocation<std::uintptr_t> target{ REL::ID(110562) };
 			stl::asm_replace(target.address(), 0x29, reinterpret_cast<std::uintptr_t>(QuitGame));
 		}
 
 	private:
 		static bool QuitGame()
 		{
-			static REL::Relocation<void**>                            Console{ REL::Offset(0x058FAC50) };
-			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::Offset(0x02886B74) };
+			static REL::Relocation<void**>                            Console{ REL::ID(879277) };
+			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::ID(166359) };
 			ConsolePrint(*Console.get(), "Bye.");
 
 			std::thread(
 				[]() {
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					static REL::Relocation<std::byte**> Main{ REL::Offset(0x059096A8) };
+					static REL::Relocation<std::byte**> Main{ REL::ID(881027) };
 					auto quitGame = reinterpret_cast<bool*>((*Main.get()) + 0x28);
 					*quitGame = true;
 				})
@@ -78,7 +78,7 @@ private:
 	public:
 		static void Install()
 		{
-			static REL::Relocation<std::uintptr_t> target{ REL::Offset(0x023FB21C), 0x77 };
+			static REL::Relocation<std::uintptr_t> target{ REL::ID(149084), 0x77 };
 			auto& trampoline = SFSE::GetTrampoline();
 			trampoline.write_call<5>(target.address(), Shutdown);
 		}
@@ -98,8 +98,8 @@ DLLEXPORT constinit auto SFSEPlugin_Version = []() noexcept {
 	data.PluginName(Plugin::NAME);
 	data.AuthorName(Plugin::AUTHOR);
 	data.UsesSigScanning(false);
-	data.UsesAddressLibrary(false);
-	data.HasNoStructUse(true);
+	data.UsesAddressLibrary(true);
+	data.HasNoStructUse(false);
 	data.IsLayoutDependent(false);
 	data.CompatibleVersions({ SFSE::RUNTIME_LATEST });
 
