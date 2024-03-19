@@ -50,7 +50,7 @@ private:
 		static void Install()
 		{
 			static REL::Relocation<std::uintptr_t> target{ REL::ID(110562) };
-			stl::asm_replace(target.address(), 0x0C, reinterpret_cast<std::uintptr_t>(QuitGame));
+			stl::asm_replace(target.address(), 0x29, reinterpret_cast<std::uintptr_t>(QuitGame));
 		}
 
 	private:
