@@ -56,12 +56,13 @@ private:
 	private:
 		static bool QuitGame()
 		{
-			static REL::Relocation<void**>                            Console{ REL::ID(879277) };
+			static REL::Relocation<void**> Console{ REL::ID(879277) };
 			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::ID(166359) };
 			ConsolePrint(*Console.get(), "Bye.");
 
 			std::thread(
-				[]() {
+				[]()
+				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 					static REL::Relocation<std::byte**> Main{ REL::ID(881027) };
 					auto quitGame = reinterpret_cast<bool*>((*Main.get()) + 0x28);
@@ -91,7 +92,8 @@ private:
 	};
 };
 
-DLLEXPORT constinit auto SFSEPlugin_Version = []() noexcept {
+DLLEXPORT constinit auto SFSEPlugin_Version = []() noexcept
+{
 	SFSE::PluginVersionData data{};
 
 	data.PluginVersion(Plugin::Version);
@@ -110,12 +112,13 @@ namespace
 {
 	void MessageCallback(SFSE::MessagingInterface::Message* a_msg) noexcept
 	{
-		switch (a_msg->type) {
+		switch (a_msg->type)
+		{
 		case SFSE::MessagingInterface::kPostLoad:
-			{
-				Hooks::Install();
-				break;
-			}
+		{
+			Hooks::Install();
+			break;
+		}
 		default:
 			break;
 		}
@@ -125,7 +128,8 @@ namespace
 DLLEXPORT bool SFSEAPI SFSEPlugin_Load(const SFSE::LoadInterface* a_sfse)
 {
 #ifndef NDEBUG
-	while (!IsDebuggerPresent()) {
+	while (!IsDebuggerPresent())
+	{
 		Sleep(100);
 	}
 #endif
