@@ -15,22 +15,22 @@ namespace stl
 				dq(a_dst);
 			}
 		};
+
+		static void asm_jump(std::uintptr_t a_from, [[maybe_unused]] std::size_t a_size, std::uintptr_t a_to)
+		{
+			asm_patch p{ a_to };
+			p.ready();
+			assert(p.getSize() <= a_size);
+			REL::safe_write(
+				a_from,
+				std::span{ p.getCode<const std::byte*>(), p.getSize() });
+		}
 	}
 
-	void asm_jump(std::uintptr_t a_from, [[maybe_unused]] std::size_t a_size, std::uintptr_t a_to)
-	{
-		detail::asm_patch p{ a_to };
-		p.ready();
-		assert(p.getSize() <= a_size);
-		REL::safe_write(
-			a_from,
-			std::span{ p.getCode<const std::byte*>(), p.getSize() });
-	}
-
-	void asm_replace(std::uintptr_t a_from, std::size_t a_size, std::uintptr_t a_to)
+	static void asm_replace(std::uintptr_t a_from, std::size_t a_size, std::uintptr_t a_to)
 	{
 		REL::safe_fill(a_from, REL::INT3, a_size);
-		asm_jump(a_from, a_size, a_to);
+		detail::asm_jump(a_from, a_size, a_to);
 	}
 }
 
@@ -112,20 +112,15 @@ namespace
 DLLEXPORT bool SFSEAPI SFSEPlugin_Load(const SFSE::LoadInterface* a_sfse)
 {
 #ifndef NDEBUG
-	while (!IsDebuggerPresent())
-	{
-		Sleep(100);
-	}
+	MessageBoxA(NULL, "Loaded. You can now attach the debugger or continue execution.", Plugin::NAME.data(), NULL);
 #endif
 
 	SFSE::Init(a_sfse);
 
 	DKUtil::Logger::Init(Plugin::NAME, std::to_string(Plugin::Version));
-
 	INFO("{} v{} loaded", Plugin::NAME, Plugin::Version);
 
 	SFSE::AllocTrampoline(1 << 4);
-
 	SFSE::GetMessagingInterface()->RegisterListener(MessageCallback);
 
 	return true;
