@@ -6,7 +6,7 @@ includes("extern/commonlibsf")
 
 -- set project
 set_project("BakaQuitGameFix")
-set_version("4.1.0")
+set_version("5.0.0")
 set_license("GPL-3.0")
 
 -- set defaults
@@ -22,9 +22,6 @@ set_policy("build.optimization.lto", true)
 -- add rules
 add_rules("mode.debug", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
-
--- enable xbyak
-set_config("sfse_xbyak", true)
 
 -- setup targets
 target("BakaQuitGameFix")
