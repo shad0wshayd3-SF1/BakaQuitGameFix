@@ -1,65 +1,65 @@
 namespace Hooks
 {
-	namespace hkQuitGame
+	class hkQuitGame :
+		public REX::Singleton<hkQuitGame>
 	{
+	private:
 		static bool QuitGame()
 		{
-			static REL::Relocation<void**> Console{ REL::ID(879277) };
-			static REL::Relocation<void (*)(void*, const char*, ...)> ConsolePrint{ REL::ID(166359) };
-			ConsolePrint(*Console.get(), "Bye.");
+			if (auto log = RE::ConsoleLog::GetSingleton())
+			{
+				log->PrintLine("Bye.");
+			}
 
 			std::thread(
 				[]()
 				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					static REL::Relocation<void**> Main{ REL::ID(881027) };
-					auto quitGame = SFSE::stl::adjust_pointer<bool>(*Main.get(), 0x28);
-					*quitGame = true;
+					std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+					if (auto main = RE::Main::GetSingleton())
+					{
+						main->quitGame = true;
+					}
 				})
 				.detach();
 
 			return true;
 		}
 
+	public:
 		static void Install()
 		{
-			static REL::Relocation target{ REL::ID(110562) };
-			target.replace_func(0x29, QuitGame);
+			static REL::Relocation target{ REL::ID(66878) };
+			target.replace_func(0x28, QuitGame);
 		}
-	}
+	};
 
-	namespace hkShutdown
+	class hkShutdown :
+		public REX::Singleton<hkShutdown>
 	{
+	private:
 		static void Shutdown()
 		{
 			REX::W32::TerminateProcess(REX::W32::GetCurrentProcess(), EXIT_SUCCESS);
 		}
 
-		static void Install()
-		{
-			static REL::Relocation target{ REL::ID(149084), 0xAB };
-			target.write_call<5>(Shutdown);
-		}
-	}
+		inline static REL::Hook Hook{ REL::ID(99375), 0xA9, Shutdown };
+	};
 
 	static void Install()
 	{
 		hkQuitGame::Install();
-		hkShutdown::Install();
 	}
 }
 
 namespace
 {
-	void MessageCallback(SFSE::MessagingInterface::Message* a_msg) noexcept
+	void MessageCallback(SFSE::MessagingInterface::Message* a_msg)
 	{
 		switch (a_msg->type)
 		{
 		case SFSE::MessagingInterface::kPostLoad:
-		{
 			Hooks::Install();
 			break;
-		}
 		default:
 			break;
 		}
@@ -68,10 +68,7 @@ namespace
 
 SFSEPluginLoad(const SFSE::LoadInterface* a_sfse)
 {
-	SFSE::Init(a_sfse);
-
-	SFSE::AllocTrampoline(16);
+	SFSE::Init(a_sfse, { .trampoline = true });
 	SFSE::GetMessagingInterface()->RegisterListener(MessageCallback);
-
 	return true;
 }
